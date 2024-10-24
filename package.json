@@ -1,7 +1,7 @@
 {
   "name": "mailspring-avatars",
   "main": "./lib/main",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Avatars in your Message list",
   "repository": {
     "type": "git",
