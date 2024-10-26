@@ -11,10 +11,11 @@ Fork of [emadow](https://github.com/emadow/mailspring-avatars) project, thanks f
 ## Installing
 
 1. [Grab the latest release](https://github.com/Striffly/mailspring-avatars/releases)
-2. Extract Mailspring-Avatars and load Mailspring
-3. From the menu, select `Developer > Install a Package Manually...` from the dialog, choose the directory of this plugin to install it
+2. Extract `mailspring-avatars-xxx.zip` somewhere
+3. From the Mailspring menu, select `Developer > Install a Plugin...`. In the dialog, choose the **folder** that was extracted from the zip file to install the plugin
 
-## Contribute
+## Build / contribute
 
-Install `node_modules` with `yarn` command.<br>
-Once you have finish your edits in the `src` folder, compile with `yarn build`.
+1. Clone the project
+2. Install `node_modules` with `yarn` command
+3. Once you have finish your edits in the `src` folder, compile with `yarn build`
