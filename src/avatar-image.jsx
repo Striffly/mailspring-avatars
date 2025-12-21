@@ -60,6 +60,29 @@ const AvatarImage = createReactClass({
         }, tryNext);
     },
 
+    getTwentyIconsURL: function(email, size, cb, tryNext, useFullDomain)
+    {
+        var base = "twenty-icons.com/<%=domain%>";
+
+        var domain;
+        if( email.indexOf('@') > -1 ) {
+            domain = email.split('@')[1];
+            // If useFullDomain is false, get root domain by removing subdomains
+            // Example: mail.adflex.vn -> adflex.vn
+            if( !useFullDomain ) {
+                var parts = domain.split('.');
+                if( parts.length > 2 ) {
+                    // Take the last 2 parts (domain + TLD)
+                    domain = parts.slice(-2).join('.');
+                }
+            }
+        }
+        var url = 'https://' + this.parse(base, { domain: domain });
+        this.get(url, function(data) {
+            cb(url);
+        }, tryNext);
+    },
+
     /**
      * Facebook implementation
      * @param  {string|int}   id
@@ -246,6 +269,8 @@ const AvatarImage = createReactClass({
             triedSkype: false,
             triedGravatar: false,
             triedClearbit: false,
+            triedTwentyIcons: false,
+            triedTwentyIconsFullDomain: false,
         };
     },
     // componentWillMount: function() {
@@ -317,6 +342,24 @@ const AvatarImage = createReactClass({
             this.state.triedSkype = true;
             this.getSkypeURL( this.props.skypeId , this.props.size, this.setSrc, tryNext );
             return;
+        }
+
+        if( this.state.triedTwentyIcons === false && ! this.state.url && this.props.email) {
+            // Check if domain has subdomains (more than 2 parts)
+            var emailDomain = this.props.email.indexOf('@') > -1 ? this.props.email.split('@')[1] : null;
+            var hasSubdomain = emailDomain && emailDomain.split('.').length > 2;
+            
+            if( hasSubdomain && this.state.triedTwentyIconsFullDomain === false ) {
+                // Try full domain first (e.g., mail.adflex.vn)
+                this.state.triedTwentyIconsFullDomain = true;
+                this.getTwentyIconsURL( this.props.email, this.props.size, this.setSrc, tryNext, true );
+                return;
+            } else {
+                // Try root domain (e.g., adflex.vn) or if no subdomain, try the domain as is
+                this.state.triedTwentyIcons = true;
+                this.getTwentyIconsURL( this.props.email, this.props.size, this.setSrc, tryNext, false );
+                return;
+            }
         }
 
         if( this.state.src )
