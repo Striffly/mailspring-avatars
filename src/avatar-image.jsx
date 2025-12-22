@@ -84,55 +84,6 @@ const AvatarImage = createReactClass({
     },
 
     /**
-     * Facebook implementation
-     * @param  {string|int}   id
-     * @param  {int}   size
-     * @param  {Function} cb
-     * @return {void}
-     */
-    getFacebookURL: function( id, size, cb, tryNext )
-    {
-        var base = 'graph.facebook.com/<%=id%>/picture?width=<%=size%>';
-        var url = this.getProtocol() + '//' + this.parse(base, {id: id, size: size});
-        this.get(url, function(data) {
-            cb(url);
-        }, tryNext)
-    },
-
-    /**
-     * Google+ implementation
-     * @param  {int}   id
-     * @param  {int}   size
-     * @param  {Function} cb
-     * @return {void}
-     */
-    getGoogleURL: function( id, size, cb, tryNext )
-    {
-        var base = 'picasaweb.google.com/data/entry/api/user/<%=id%>?alt=json';
-        var url = this.getProtocol() + '//' + this.parse(base, {id: id});
-        this.get(url, function(data) {
-            var src = data.entry.gphoto$thumbnail.$t.replace('s64', 's' + size); // replace with the correct size
-            cb(src);
-        }, tryNext);
-    },
-
-    /**
-     * Skype implementation
-     * @param  {string}   id
-     * @param  {int}   size
-     * @param  {Function} cb
-     * @return {void}
-     */
-    getSkypeURL: function( id, size, cb, tryNext )
-    {
-        var base = 'api.skype.com/users/<%=id%>/profile/avatar';
-        var url = this.getProtocol() + '//' + this.parse(base, {id: id});
-        this.get(url, function(data) {
-            cb(url);
-        }, tryNext)
-    },
-
-    /**
      * Replace variables in a string
      * @param  {string} value String that will be parsed
      * @param  {Object} variables    Key value object
@@ -254,9 +205,6 @@ const AvatarImage = createReactClass({
         name: PropTypes.string,
         value: PropTypes.string,
         email: PropTypes.string,
-        facebookId: PropTypes.string,
-        googleId: PropTypes.string,
-        skypeID: PropTypes.string,
         round: PropTypes.bool,
         size: PropTypes.number
     },
@@ -264,9 +212,6 @@ const AvatarImage = createReactClass({
         return {
             src: null,
             value: null,
-            triedFacebook: false,
-            triedGoogle: false,
-            triedSkype: false,
             triedGravatar: false,
             triedClearbit: false,
             triedTwentyIcons: false,
@@ -323,24 +268,6 @@ const AvatarImage = createReactClass({
         if( this.state.triedGravatar === false && ! this.state.url && this.props.email) {
             this.state.triedGravatar = true;
             this.getGravatarURL( this.props.email, this.props.size, this.setSrc, tryNext );
-            return;
-        }
-
-        if( this.state.triedFacebook === false && ! this.state.url && this.props.facebookId) {
-            this.state.triedFacebook = true;
-            this.getFacebookURL( this.props.facebookId , this.props.size, this.setSrc, tryNext );
-            return;
-        }
-
-        if( this.state.triedGoogle === false && ! this.state.url && this.props.googleId) {
-            this.state.triedGoogle = true;
-            this.getGoogleURL( this.props.googleId , this.props.size, this.setSrc, tryNext );
-            return;
-        }
-
-        if( this.state.triedSkype === false && ! this.state.url && this.props.skypeId) {
-            this.state.triedSkype = true;
-            this.getSkypeURL( this.props.skypeId , this.props.size, this.setSrc, tryNext );
             return;
         }
 
@@ -438,9 +365,6 @@ AvatarImage.defaultProps = {
     name: null,
     value: null,
     email: null,
-    facebookId: null,
-    skypeId: null,
-    googleId: null,
     round: false,
     size: 32
 };
