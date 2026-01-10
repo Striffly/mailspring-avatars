@@ -11,7 +11,8 @@
     "build": "tsc"
   },
   "engines": {
-    "mailspring": ">=1.6.3"
+    "mailspring": ">=1.6.3",
+    "node": ">=24"
   },
   "windowTypes": {
     "default": true,
