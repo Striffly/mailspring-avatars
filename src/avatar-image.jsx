@@ -104,10 +104,7 @@ const urlCache = new LRUCache(4096, 1209600000); // 2 weeks in ms
 var cleanupIntervalId = null;
 if (typeof window !== 'undefined') {
     cleanupIntervalId = setInterval(() => {
-        var cleaned = urlCache.cleanup();
-        if (cleaned > 0) {
-            console.log('[AvatarImage] Cleaned up ' + cleaned + ' expired cache entries');
-        }
+        urlCache.cleanup();
     }, 600000);
     
     // Cleanup on window unload to prevent memory leaks
@@ -221,7 +218,7 @@ const AvatarImage = createReactClass({
         // Security: Reasonable size limits to prevent memory exhaustion
         var MAX_DIMENSION = 512;
         if (img.width > MAX_DIMENSION || img.height > MAX_DIMENSION) {
-            console.warn('[AvatarImage] Image too large (' + img.width + 'x' + img.height + '), using URL fallback');
+            // Image too large, use URL fallback instead of base64
             return url;
         }
         
@@ -241,7 +238,6 @@ const AvatarImage = createReactClass({
             return dataUrl;
         } catch (e) {
             // CORS error or other canvas issues - use URL directly
-            console.warn('[AvatarImage] Canvas conversion failed:', e.message);
             return url;
         }
     },
