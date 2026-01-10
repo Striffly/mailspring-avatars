@@ -213,15 +213,35 @@ const AvatarImage = createReactClass({
      * @return {string} Base64 data URL or original URL if CORS fails
      */
     imageToDataUrl: function(img, url) {
+        // Security: Validate that we actually loaded an image
+        if (!img || !img.width || !img.height || img.width === 0 || img.height === 0) {
+            throw new Error('Invalid image: dimensions are zero or undefined');
+        }
+        
+        // Security: Reasonable size limits to prevent memory exhaustion
+        var MAX_DIMENSION = 512;
+        if (img.width > MAX_DIMENSION || img.height > MAX_DIMENSION) {
+            console.warn('[AvatarImage] Image too large (' + img.width + 'x' + img.height + '), using URL fallback');
+            return url;
+        }
+        
         try {
             var canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
             var ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            return canvas.toDataURL('image/png');
+            var dataUrl = canvas.toDataURL('image/png');
+            
+            // Security: Validate that toDataURL returned a proper data URL
+            if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                throw new Error('Invalid data URL generated');
+            }
+            
+            return dataUrl;
         } catch (e) {
-            // CORS error - can't convert to canvas, use URL directly
+            // CORS error or other canvas issues - use URL directly
+            console.warn('[AvatarImage] Canvas conversion failed:', e.message);
             return url;
         }
     },
