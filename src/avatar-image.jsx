@@ -4,6 +4,7 @@
 import {Utils, React} from 'mailspring-exports';
 import PropTypes from 'prop-types';
 import createReactClass from 'create-react-class';
+import validator from 'validator';
 
 // Simple LRU cache implementation
 class LRUCache {
@@ -89,6 +90,23 @@ const AvatarImage = createReactClass({
     },
 
     /**
+     * Validate and sanitize domain extracted from email
+     * @param  {string}   domain
+     * @return {string|null} Validated domain or null if invalid
+     */
+    validateDomain: function(domain) {
+        if (!domain) return null;
+        
+        // Use validator.isFQDN to check if it's a valid domain
+        // Options: require_tld ensures a TLD is present, allow_underscores=false for strict validation
+        if (!validator.isFQDN(domain, { require_tld: true, allow_underscores: false })) {
+            return null;
+        }
+        
+        return domain;
+    },
+
+    /**
      * Extract domain from email, optionally getting root domain only
      */
     getDomain: function(email, useFullDomain) {
@@ -162,8 +180,8 @@ const AvatarImage = createReactClass({
             return;
         }
 
-        var fullDomain = this.getDomain(this.props.email, true);
-        var rootDomain = this.getDomain(this.props.email, false);
+        var fullDomain = this.validateDomain(this.getDomain(this.props.email, true));
+        var rootDomain = this.validateDomain(this.getDomain(this.props.email, false));
 
         // Try full domain first if it has subdomains
         if (fullDomain && fullDomain !== rootDomain) {
