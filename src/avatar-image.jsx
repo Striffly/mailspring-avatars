@@ -6,24 +6,44 @@ import PropTypes from 'prop-types';
 import createReactClass from 'create-react-class';
 import validator from 'validator';
 
-// Simple LRU cache implementation
+// Simple LRU cache implementation with TTL support
 class LRUCache {
-    constructor(maxSize) {
+    constructor(maxSize, ttlMs = 3600000) { // Default TTL: 1 hour
         this.maxSize = maxSize;
+        this.ttlMs = ttlMs;
         this.cache = new Map();
+        this.timestamps = new Map();
     }
 
     has(key) {
-        return this.cache.has(key);
+        if (!this.cache.has(key)) return false;
+        
+        // Check if entry has expired
+        if (this.isExpired(key)) {
+            this.delete(key);
+            return false;
+        }
+        
+        return true;
     }
 
     get(key) {
-        var hit = this.cache.has(key);
-        if (!hit) return undefined;
+        if (!this.cache.has(key)) return undefined;
+        
+        // Check expiration
+        if (this.isExpired(key)) {
+            this.delete(key);
+            return undefined;
+        }
+        
         // Move to end (most recently used)
         var value = this.cache.get(key);
+        var timestamp = this.timestamps.get(key);
         this.cache.delete(key);
+        this.timestamps.delete(key);
         this.cache.set(key, value);
+        this.timestamps.set(key, timestamp);
+        
         return value;
     }
 
@@ -31,22 +51,75 @@ class LRUCache {
         // Delete if exists to refresh position
         if (this.cache.has(key)) {
             this.cache.delete(key);
+            this.timestamps.delete(key);
         }
+        
         this.cache.set(key, value);
+        this.timestamps.set(key, Date.now());
+        
         // Evict oldest if over capacity
         if (this.cache.size > this.maxSize) {
             var oldest = this.cache.keys().next().value;
             this.cache.delete(oldest);
+            this.timestamps.delete(oldest);
         }
     }
     
     delete(key) {
         this.cache.delete(key);
+        this.timestamps.delete(key);
+    }
+    
+    isExpired(key) {
+        if (!this.timestamps.has(key)) return true;
+        var timestamp = this.timestamps.get(key);
+        return (Date.now() - timestamp) > this.ttlMs;
+    }
+    
+    clear() {
+        this.cache.clear();
+        this.timestamps.clear();
+    }
+    
+    // Cleanup expired entries
+    cleanup() {
+        var keysToDelete = [];
+        for (var key of this.cache.keys()) {
+            if (this.isExpired(key)) {
+                keysToDelete.push(key);
+            }
+        }
+        for (var i = 0; i < keysToDelete.length; i++) {
+            this.delete(keysToDelete[i]);
+        }
+        return keysToDelete.length;
     }
 }
 
 // LRU cache for favicons - stores base64 data URLs
-const urlCache = new LRUCache(4096);
+const urlCache = new LRUCache(4096, 1209600000); // 2 weeks in ms
+
+// Periodic cleanup every 10 minutes
+// Store interval ID to allow cleanup on module unload
+var cleanupIntervalId = null;
+if (typeof window !== 'undefined') {
+    cleanupIntervalId = setInterval(() => {
+        var cleaned = urlCache.cleanup();
+        if (cleaned > 0) {
+            console.log('[AvatarImage] Cleaned up ' + cleaned + ' expired cache entries');
+        }
+    }, 600000);
+    
+    // Cleanup on window unload to prevent memory leaks
+    if (window.addEventListener) {
+        window.addEventListener('beforeunload', function() {
+            if (cleanupIntervalId !== null) {
+                clearInterval(cleanupIntervalId);
+                cleanupIntervalId = null;
+            }
+        });
+    }
+}
 
 const AvatarImage = createReactClass({
     displayName: 'AvatarImage',
