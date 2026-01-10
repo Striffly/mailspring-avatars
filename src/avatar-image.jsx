@@ -418,6 +418,41 @@ const AvatarImage = createReactClass({
     },
 
     /**
+     * Validate and sanitize color value to prevent CSS injection
+     * @param {string} color - Color value to validate
+     * @return {string|null} Valid hex color or null
+     */
+    validateColor: function(color) {
+        if (!color || typeof color !== 'string') return null;
+        
+        // Only allow hex colors (#RGB or #RRGGBB)
+        var hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+        if (!hexPattern.test(color)) {
+            return null;
+        }
+        
+        return color;
+    },
+
+    /**
+     * Validate and sanitize size value to prevent CSS injection
+     * @param {number} size - Size value to validate
+     * @return {number} Valid size (clamped to safe range)
+     */
+    validateSize: function(size) {
+        // Ensure it's a number
+        var numSize = parseInt(size, 10);
+        if (isNaN(numSize) || numSize <= 0) {
+            return 32; // Default size
+        }
+        
+        // Clamp to reasonable range (prevent DOS via huge sizes)
+        var MIN_SIZE = 16;
+        var MAX_SIZE = 512;
+        return Math.max(MIN_SIZE, Math.min(MAX_SIZE, numSize));
+    },
+
+    /**
      * Return a deterministic color based on email
      */
     rndColor: function() {
@@ -460,23 +495,28 @@ const AvatarImage = createReactClass({
     },
 
     getVisual: function() {
+        // Security: Validate all user-provided style values
+        var safeSize = this.validateSize(this.props.size);
+        var safeBgColor = this.validateColor(this.props.color) || this.rndColor();
+        var safeFgColor = this.validateColor(this.props.fgColor) || '#FFF';
+        
         var imageStyle = {
             maxWidth: '100%',
-            width: this.props.size,
-            height: this.props.size,
+            width: safeSize,
+            height: safeSize,
             borderRadius: (this.props.round ? 500 : 0),
             objectFit: 'cover'
         };
 
         var initialsStyle = {
-            background: this.props.color || this.rndColor(),
-            width: this.props.size,
-            height: this.props.size,
-            font: Math.floor(this.props.size / 3) + 'px/100px',
-            color: this.props.fgColor,
+            background: safeBgColor,
+            width: safeSize,
+            height: safeSize,
+            font: Math.floor(safeSize / 3) + 'px/100px',
+            color: safeFgColor,
             textAlign: 'center',
             textTransform: 'uppercase',
-            lineHeight: (this.props.size + Math.floor(this.props.size / 10)) + 'px',
+            lineHeight: (safeSize + Math.floor(safeSize / 10)) + 'px',
             borderRadius: (this.props.round ? 500 : 0)
         };
 
@@ -492,10 +532,13 @@ const AvatarImage = createReactClass({
     },
 
     render: function() {
+        // Security: Validate size to prevent CSS injection
+        var safeSize = this.validateSize(this.props.size);
+        
         var hostStyle = {
             display: 'inline-block',
-            width: this.props.size,
-            height: this.props.size,
+            width: safeSize,
+            height: safeSize,
             borderRadius: (this.props.round ? 500 : 0),
             objectFit: 'cover'
         };
