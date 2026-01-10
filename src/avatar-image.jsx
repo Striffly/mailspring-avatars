@@ -147,13 +147,16 @@ const AvatarImage = createReactClass({
         this.fetchAvatar();
     },
 
-    componentWillReceiveProps: function(newProps) {
-        if (newProps.img_data && newProps.img_data !== this.props.img_data) {
-            this.trySetState({ img_data: newProps.img_data });
-        } else if (newProps.name && newProps.name !== this.props.name) {
-            this.trySetState({ value: this.getInitials(newProps.name) });
-        } else if (newProps.value && newProps.value !== this.props.value) {
-            this.trySetState({ value: newProps.value });
+    componentDidUpdate: function(prevProps) {
+        // Re-fetch avatar if email changed
+        if (this.props.email && this.props.email !== prevProps.email) {
+            this.fetchAvatar();
+        } else if (this.props.img_data && this.props.img_data !== prevProps.img_data) {
+            this.trySetState({ img_data: this.props.img_data });
+        } else if (this.props.name && this.props.name !== prevProps.name) {
+            this.trySetState({ value: this.getInitials(this.props.name) });
+        } else if (this.props.value && this.props.value !== prevProps.value) {
+            this.trySetState({ value: this.props.value });
         }
     },
 
