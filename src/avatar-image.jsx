@@ -102,21 +102,33 @@ const urlCache = new LRUCache(4096, 1209600000); // 2 weeks in ms
 // Periodic cleanup every 10 minutes
 // Store interval ID to allow cleanup on module unload
 var cleanupIntervalId = null;
-if (typeof window !== 'undefined') {
-    cleanupIntervalId = setInterval(() => {
-        urlCache.cleanup();
-    }, 600000);
-    
-    // Cleanup on window unload to prevent memory leaks
-    if (window.addEventListener) {
-        window.addEventListener('beforeunload', function() {
-            if (cleanupIntervalId !== null) {
-                clearInterval(cleanupIntervalId);
-                cleanupIntervalId = null;
-            }
-        });
+
+/**
+ * Initialize the periodic cache cleanup
+ * Called automatically on module load
+ */
+function initCleanup() {
+    if (typeof window !== 'undefined' && cleanupIntervalId === null) {
+        cleanupIntervalId = setInterval(() => {
+            urlCache.cleanup();
+        }, 600000);
     }
 }
+
+/**
+ * Stop the periodic cache cleanup and clear the cache
+ * Should be called when the plugin is deactivated
+ */
+function stopCleanup() {
+    if (cleanupIntervalId !== null) {
+        clearInterval(cleanupIntervalId);
+        cleanupIntervalId = null;
+    }
+    urlCache.clear();
+}
+
+// Auto-initialize cleanup on module load
+initCleanup();
 
 const AvatarImage = createReactClass({
     displayName: 'AvatarImage',
@@ -144,7 +156,12 @@ const AvatarImage = createReactClass({
     },
 
     componentDidMount: function() {
+        this._isMounted = true;
         this.fetchAvatar();
+    },
+
+    componentWillUnmount: function() {
+        this._isMounted = false;
     },
 
     componentDidUpdate: function(prevProps) {
@@ -161,7 +178,7 @@ const AvatarImage = createReactClass({
     },
 
     trySetState: function(hash) {
-        if (this.isMounted()) {
+        if (this._isMounted) {
             this.setState(hash);
         }
     },
@@ -565,3 +582,4 @@ AvatarImage.defaultProps = {
 };
 
 module.exports = AvatarImage;
+module.exports.stopCleanup = stopCleanup;

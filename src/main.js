@@ -1,5 +1,6 @@
 import { ComponentRegistry } from 'mailspring-exports';
 import AvatarFactory from './avatar-factory';
+import { stopCleanup } from './avatar-image';
 
 const SmallAvatar = AvatarFactory(32,'SmallAvatar');
 const LargeAvatar = AvatarFactory(42,'LargeAvatar');
@@ -26,6 +27,7 @@ export function serialize() {
 // subscribing to events, release them here.
 //
 export function deactivate() {
-  ComponentRegistry.unregister(SmallAvatar)
-  // ComponentRegistry.unregister(LargeAvatar)
+  ComponentRegistry.unregister(SmallAvatar);
+  // ComponentRegistry.unregister(LargeAvatar);
+  stopCleanup();
 }
