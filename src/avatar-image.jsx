@@ -110,13 +110,20 @@ const AvatarImage = createReactClass({
      * Extract domain from email, optionally getting root domain only
      */
     getDomain: function(email, useFullDomain) {
+        if (!email || typeof email !== 'string') return null;
         if (email.indexOf('@') === -1) return null;
         
-        var domain = email.split('@')[1];
+        var parts = email.split('@');
+        // Reject malformed emails like "user@@domain" or "user@" or "@domain"
+        if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+        
+        var domain = parts[1].trim();
+        if (!domain) return null;
+        
         if (!useFullDomain) {
-            var parts = domain.split('.');
-            if (parts.length > 2) {
-                domain = parts.slice(-2).join('.');
+            var domainParts = domain.split('.');
+            if (domainParts.length > 2) {
+                domain = domainParts.slice(-2).join('.');
             }
         }
         return domain;
