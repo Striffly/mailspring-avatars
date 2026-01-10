@@ -17,5 +17,5 @@ Fork of [emadow](https://github.com/emadow/mailspring-avatars) project, thanks f
 ## Build / contribute
 
 1. Clone the project
-2. Install `node_modules` with `yarn` command
-3. Once you have finish your edits in the `src` folder, compile with `yarn build`
+2. Install `node_modules` with `pnpm` command
+3. Once you have finish your edits in the `src` folder, compile with `pnpm build`
