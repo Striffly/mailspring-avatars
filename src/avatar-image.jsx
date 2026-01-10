@@ -39,9 +39,13 @@ class LRUCache {
             this.cache.delete(oldest);
         }
     }
+    
+    delete(key) {
+        this.cache.delete(key);
+    }
 }
 
-// LRU cache for favicons - stores data URLs (base64)
+// LRU cache for favicons - stores base64 data URLs
 const urlCache = new LRUCache(4096);
 
 const AvatarImage = createReactClass({
@@ -130,51 +134,76 @@ const AvatarImage = createReactClass({
     },
 
     /**
-     * Convert loaded image to data URL using canvas
+     * Convert loaded image to base64 data URL using canvas
+     * @param {Image} img - The loaded image element
+     * @param {string} url - The original URL (for fallback)
+     * @return {string} Base64 data URL or original URL if CORS fails
      */
-    imageToDataUrl: function(img, url, resolve) {
-        var canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+    imageToDataUrl: function(img, url) {
         try {
-            var dataUrl = canvas.toDataURL('image/png');
-            urlCache.set(url, dataUrl);
-            resolve(dataUrl);
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png');
         } catch (e) {
-            // CORS issue - fall back to using the URL directly
-            urlCache.set(url, url);
-            resolve(url);
+            // CORS error - can't convert to canvas, use URL directly
+            return url;
         }
     },
 
     /**
-     * Load favicon and convert to data URL (cached)
-     * Caches the base64 data URL on success to avoid network requests on re-render
+     * Load favicon, convert to base64 data URL, and cache the result
+     * This avoids network requests on re-renders
      */
     loadFavicon: function(url) {
         // Return cached result if available
         if (urlCache.has(url)) {
             var cached = urlCache.get(url);
-            // cached is either a promise (pending) or a data URL string (resolved)
+            // If it's a string (resolved data URL), return it
             if (typeof cached === 'string') {
                 return Promise.resolve(cached);
             }
-            return cached;
+            // If it's a promise, return a new independent promise
+            // This prevents shared promise failures from affecting all callers
+            return new Promise((resolve, reject) => {
+                cached.then(resolve, reject);
+            });
         }
 
+        // Create the promise that will load and convert the image
         var self = this;
-        // Create and cache the promise immediately
         var promise = new Promise((resolve, reject) => {
             var img = new Image();
             img.crossOrigin = 'anonymous';
-            img.onload = () => self.imageToDataUrl(img, url, resolve);
-            img.onerror = () => reject();
+            
+            img.onload = () => {
+                // Convert to base64 data URL (or fallback to URL on CORS error)
+                var dataUrl = self.imageToDataUrl(img, url);
+                // Cache the result for future use
+                urlCache.set(url, dataUrl);
+                resolve(dataUrl);
+            };
+            
+            img.onerror = () => {
+                // Don't cache failures - remove from cache to allow retry
+                if (urlCache.has(url)) {
+                    var cached = urlCache.get(url);
+                    // Only delete if it's still our promise (not replaced by another call)
+                    if (cached === promise) {
+                        urlCache.delete(url);
+                    }
+                }
+                reject(new Error('Failed to load favicon: ' + url));
+            };
+            
             img.src = url;
         });
 
+        // Cache the promise temporarily until it resolves
         urlCache.set(url, promise);
+        
         return promise;
     },
 
