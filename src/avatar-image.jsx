@@ -77,7 +77,8 @@ const AvatarImage = createReactClass({
                 }
             }
         }
-        var url = 'https://' + this.parse(base, { domain: domain });
+        var prefix = this.getProtocol() === 'https:' ? 'https://' : 'http://';
+        var url = prefix + this.parse(base, { domain: domain });
         this.get(url, function(data) {
             cb(url);
         }, tryNext);
