@@ -8,7 +8,8 @@
     "url": "https://github.com/Striffly/mailspring-avatars"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "release": "ver=$(node -p \"require('./package.json').version\") && file=\"mailspring-avatars-$ver.zip\" && echo \"📦 Creating release $file...\" && rm -f $file && rm -rf node_modules && pnpm install --silent && pnpm build && rm -rf node_modules && pnpm install --prod --config.node-linker=hoisted --silent && git ls-files | zip -q $file -@ && zip -qur $file lib node_modules && pnpm install --silent && echo \"✓ Release archive created: $file\""
   },
   "engines": {
     "mailspring": ">=1.6.3",
