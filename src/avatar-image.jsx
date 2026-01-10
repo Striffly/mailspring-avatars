@@ -251,6 +251,16 @@ const AvatarImage = createReactClass({
      * This avoids network requests on re-renders
      */
     loadFavicon: function(url) {
+        // Security: Validate URL format before processing
+        if (!url || typeof url !== 'string') {
+            return Promise.reject(new Error('Invalid URL provided'));
+        }
+        
+        // Security: Only allow HTTPS URLs to prevent mixed content and MITM attacks
+        if (!url.startsWith('https://')) {
+            return Promise.reject(new Error('Only HTTPS URLs are allowed'));
+        }
+        
         // Return cached result if available
         if (urlCache.has(url)) {
             var cached = urlCache.get(url);
@@ -272,11 +282,27 @@ const AvatarImage = createReactClass({
             img.crossOrigin = 'anonymous';
             
             img.onload = () => {
-                // Convert to base64 data URL (or fallback to URL on CORS error)
-                var dataUrl = self.imageToDataUrl(img, url);
-                // Cache the result for future use
-                urlCache.set(url, dataUrl);
-                resolve(dataUrl);
+                try {
+                    // Convert to base64 data URL (or fallback to URL on CORS error)
+                    var dataUrl = self.imageToDataUrl(img, url);
+                    
+                    // Security: Validate result before caching
+                    if (!dataUrl || typeof dataUrl !== 'string') {
+                        throw new Error('imageToDataUrl returned invalid data');
+                    }
+                    
+                    // Security: Ensure it's either a data URL or the original HTTPS URL
+                    if (!dataUrl.startsWith('data:image/') && !dataUrl.startsWith('https://')) {
+                        throw new Error('Invalid data URL format');
+                    }
+                    
+                    // Cache the result for future use
+                    urlCache.set(url, dataUrl);
+                    resolve(dataUrl);
+                } catch (e) {
+                    // Don't cache errors
+                    reject(e);
+                }
             };
             
             img.onerror = () => {
