@@ -292,10 +292,14 @@ const AvatarImage = createReactClass({
         var fullDomain = this.validateDomain(this.getDomain(this.props.email, true));
         var rootDomain = this.validateDomain(this.getDomain(this.props.email, false));
 
+        // Encode domains for URL safety (defense in depth)
+        var encodedFullDomain = fullDomain ? encodeURIComponent(fullDomain) : null;
+        var encodedRootDomain = rootDomain ? encodeURIComponent(rootDomain) : null;
+
         // Try full domain first if it has subdomains
-        if (fullDomain && fullDomain !== rootDomain) {
+        if (encodedFullDomain && fullDomain !== rootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://twenty-icons.com/' + fullDomain);
+                var img_data = await this.loadFavicon('https://twenty-icons.com/' + encodedFullDomain);
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
@@ -304,9 +308,9 @@ const AvatarImage = createReactClass({
         }
 
         // Try root domain
-        if (rootDomain) {
+        if (encodedRootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://twenty-icons.com/' + rootDomain);
+                var img_data = await this.loadFavicon('https://twenty-icons.com/' + encodedRootDomain);
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
@@ -316,9 +320,9 @@ const AvatarImage = createReactClass({
 
         // Try vemetric with full domain first if it has subdomains
         // default= forces vemetric to return 404 if no favicon found
-        if (fullDomain && fullDomain !== rootDomain) {
+        if (encodedFullDomain && fullDomain !== rootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://favicon.vemetric.com/' + fullDomain + '?default=');
+                var img_data = await this.loadFavicon('https://favicon.vemetric.com/' + encodedFullDomain + '?default=');
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
@@ -328,9 +332,9 @@ const AvatarImage = createReactClass({
 
         // Try vemetric with root domain
         // default= forces vemetric to return 404 if no favicon found
-        if (rootDomain) {
+        if (encodedRootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://favicon.vemetric.com/' + rootDomain + '?default=');
+                var img_data = await this.loadFavicon('https://favicon.vemetric.com/' + encodedRootDomain + '?default=');
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
@@ -339,9 +343,9 @@ const AvatarImage = createReactClass({
         }
 
         // Try favicon0 with full domain first if it has subdomains
-        if (fullDomain && fullDomain !== rootDomain) {
+        if (encodedFullDomain && fullDomain !== rootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://cdn.favicon0.com/' + fullDomain + '/favicon.png');
+                var img_data = await this.loadFavicon('https://cdn.favicon0.com/' + encodedFullDomain + '/favicon.png');
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
@@ -350,9 +354,9 @@ const AvatarImage = createReactClass({
         }
 
         // Try favicon0 with root domain
-        if (rootDomain) {
+        if (encodedRootDomain) {
             try {
-                var img_data = await this.loadFavicon('https://cdn.favicon0.com/' + rootDomain + '/favicon.png');
+                var img_data = await this.loadFavicon('https://cdn.favicon0.com/' + encodedRootDomain + '/favicon.png');
                 this.trySetState({ img_data: img_data });
                 return;
             } catch (e) {
